@@ -1,6 +1,3 @@
-fn main() {
-    println!("Hello, world!");
-}
 use bevy::{prelude::*, window::PrimaryWindow};
 
 fn main() {
